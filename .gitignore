@@ -1,6 +1,18 @@
 # 本地文件夹
 local_assets/
+
 # 配置文件
 config.ini
+
 # 图标
 favicon.ico
+
+#chromedriver相关
+LICENSE.chromedriver
+chromedriver.exe
+THIRD_PARTY_NOTICES.chromedriver
+
+#打包相关
+dist/
+build/
+main.spec
