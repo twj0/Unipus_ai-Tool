@@ -2,3 +2,5 @@
 local_assets/
 # 配置文件
 config.ini
+# 图标
+favicon.ico
