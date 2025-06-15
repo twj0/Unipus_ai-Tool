@@ -6,6 +6,13 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
+# v--vv--vv--vv--vv--vv--vv--v
+# --- 补上缺失的Tkinter导入 ---
+import tkinter as tk
+from tkinter import messagebox
+# ^--^^--^^--^^--^^--^^--^^--^
+
+
 # 导入我们的AI和浏览器交互模块
 import ai_handler
 import browser_handler

@@ -12,6 +12,13 @@ import config_manager
 from page_analyzer import PageAnalyzer
 from task_handlers import handle_video_page, handle_quiz_fill_in_blank, handle_reading_page, handle_unknown_page
 
+# v--vv--vv--vv--vv--vv--vv--v
+# --- 补上缺失的Selenium导入 ---
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+# ^--^^--^^--^^--^^--^^--^^--^
+
 class AutoAnswerGUI:
     def __init__(self, root):
         self.root = root
