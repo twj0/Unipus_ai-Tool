@@ -107,16 +107,19 @@ class AutoAnswerGUI:
 
     def connect_browser(self):
         try:
-            self.driver = browser_handler.connect_or_start_chrome(progress_callback=self.log)
+            # v--vv--vv--vv--vv--vv--vv--v
+            # --- 这是最终修正的函数名 ---
+            self.driver = browser_handler.connect_or_start_browser(progress_callback=self.log)
+            # ^--^^--^^--^^--^^--^^--^^--^
             self.log("浏览器连接成功。")
             browser_handler.check_and_navigate(self.driver)
             self.log("已打开目标网站，请登录，然后导航至任意任务页。")
             self.root.after(0, lambda: self.run_button.config(state=tk.NORMAL))
             self.root.after(0, lambda: self.connect_button.config(text="重新连接", state=tk.NORMAL))
         except Exception as e:
-            self.log(f"连接浏览器失败: {e}")
-            messagebox.showerror("浏览器连接失败", str(e))
+            self.log(f"连接浏览器失败: {e}"); messagebox.showerror("浏览器连接失败", str(e))
             self.root.after(0, lambda: self.connect_button.config(state=tk.NORMAL))
+
 
     def run_automation_loop(self):
         if not self.driver:
