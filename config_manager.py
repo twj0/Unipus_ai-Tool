@@ -14,7 +14,8 @@ def create_default_config():
     config['API_Keys'] = {
         'dashscope_api_key': 'YOUR_DASHSCOPE_API_KEY_HERE',
         'gemini_api_key': 'YOUR_GEMINI_API_KEY_HERE',
-        'deepseek_api_key': 'YOUR_DEEPSEEK_API_KEY_HERE'
+        'deepseek_api_key': 'YOUR_DEEPSEEK_API_KEY_HERE',
+        'groq_api_key': 'YOUR_GROQ_API_KEY_HERE',
     }
     with open(CONFIG_PATH, 'w', encoding='utf-8') as f: config.write(f)
     tkinter.messagebox.showwarning("Configuration Created", f"config.ini已创建，请在其中填入你的API密钥。")

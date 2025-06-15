@@ -37,6 +37,33 @@ class DeepSeekProvider(BaseAIProvider):
         except Exception as e: return f"Error calling DeepSeek: {e}"
 
 AI_PROVIDERS = {"Qwen (DashScope)": DashScopeProvider, "Gemini": GeminiProvider, "Deep Seek": DeepSeekProvider}
+
+# In ai_handler.py
+
+class GroqProvider(BaseAIProvider):
+    """Provider for Groq's high-speed inference engine."""
+    def call_ai(self, prompt: str) -> str:
+        payload = {
+            # Models like 'llama3-8b-8192' or 'mixtral-8x7b-32768'
+            "model": "llama3-8b-8192",
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        try:
+            # Note: Groq's endpoint is different from OpenAI/DeepSeek
+            response = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers=headers,
+                data=json.dumps(payload),
+                timeout=30
+            )
+            response.raise_for_status()
+            return response.json()['choices'][0]['message']['content']
+        except Exception as e:
+            return f"Error calling Groq: {e}"
 def get_ai_provider(provider_name: str, api_key: str) -> BaseAIProvider:
     provider_class = AI_PROVIDERS.get(provider_name)
     if not provider_class: raise ValueError(f"Unknown AI provider: {provider_name}")
