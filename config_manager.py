@@ -1,4 +1,4 @@
-# File: config_manager.py
+# File: config_manager.py (Final Version)
 import configparser, os, sys, tkinter.messagebox
 
 def get_current_dir():
@@ -15,7 +15,8 @@ def create_default_config():
         'dashscope_api_key': 'YOUR_DASHSCOPE_API_KEY_HERE',
         'gemini_api_key': 'YOUR_GEMINI_API_KEY_HERE',
         'deepseek_api_key': 'YOUR_DEEPSEEK_API_KEY_HERE',
-        'groq_api_key': 'YOUR_GROQ_API_KEY_HERE',
+        'zhipuai_api_key': 'YOUR_ZHIPUAI_API_KEY_HERE',
+        'groq_api_key': 'YOUR_GROQ_API_KEY_HERE' # <-- The new key for Groq
     }
     with open(CONFIG_PATH, 'w', encoding='utf-8') as f: config.write(f)
     tkinter.messagebox.showwarning("Configuration Created", f"config.ini已创建，请在其中填入你的API密钥。")
