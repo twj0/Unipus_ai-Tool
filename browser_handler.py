@@ -1,4 +1,4 @@
-# File: browser_handler.py (Corrected Version)
+# File: browser_handler.py (The Final Version)
 import socket, time
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
@@ -8,8 +8,9 @@ from selenium.webdriver.edge.options import Options as EdgeOptions
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import WebDriverException, TimeoutException
+from selenium.common.exceptions import TimeoutException
 from driver_manager import WebDriverManager
+from tkinter import messagebox
 
 def is_port_in_use(port: int) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -52,8 +53,56 @@ def connect_or_start_browser(progress_callback=print):
     progress_callback("新的浏览器实例已成功启动！")
     return driver
 
-# v--vv--vv--vv--vv--vv--vv--v
-# --- 这是修正后的干净版本 ---
+
+def navigate_and_login(driver: webdriver.Remote, username: str, password: str, progress_callback=print):
+    """
+    导航到正确的学习中心登录入口，并自动填充用户名和密码。
+    """
+    try:
+        # --- 走正确的大门 ---
+        target_url = "https://uai.unipus.cn/home"
+        progress_callback(f"正在导航至正确的学习中心入口: {target_url}")
+        driver.get(target_url)
+
+        wait = WebDriverWait(driver, 20)
+        
+        # --- 等待登录表单出现 ---
+        # 新版登录是在一个弹窗里的
+        progress_callback("等待登录弹窗加载...")
+        login_iframe = wait.until(EC.presence_of_element_located((By.ID, "unipus-login-iframe")))
+        driver.switch_to.frame(login_iframe)
+        
+        # --- 在弹窗内部进行填充 ---
+        user_field = wait.until(EC.visibility_of_element_located((By.ID, "username")))
+        pass_field = driver.find_element(By.ID, "password")
+        
+        progress_callback("正在填写用户名和密码...")
+        user_field.clear(); user_field.send_keys(username)
+        time.sleep(0.5)
+        pass_field.clear(); pass_field.send_keys(password)
+        
+        # 弹窗提醒用户手动操作
+        messagebox.showinfo(
+            "请手动登录", 
+            "账号密码已自动填写。\n\n请您手动完成剩余操作（如勾选协议、点击登录按钮等），程序将等待您登录成功。"
+        )
+        
+        # --- 等待登录成功 ---
+        progress_callback("等待用户登录成功...")
+        # 成功后，iframe会消失，我们可以等待它消失
+        wait.until(EC.invisibility_of_element_located((By.ID, "unipus-login-iframe")))
+        progress_callback("检测到登录弹窗消失，登录成功！")
+        
+    except TimeoutException:
+        progress_callback("错误：等待登录超时或登录弹窗未出现。")
+        raise Exception("登录超时")
+    except Exception as e:
+        progress_callback(f"登录过程中发生错误: {e}")
+        raise e
+    finally:
+        # 无论如何，确保切回主页面
+        driver.switch_to.default_content()
+
 def check_and_navigate(driver, target_url="https://ucloud.unipus.cn/"):
     """检查司机是否在目标网站上，如果不在，则进行导航。"""
     valid_prefixes = ["https://uai.unipus.cn", "https://ucloud.unipus.cn", "https://ucontent.unipus.cn"]
@@ -64,7 +113,7 @@ def check_and_navigate(driver, target_url="https://ucloud.unipus.cn/"):
         driver.get(target_url)
         time.sleep(3) # 等待可能的重定向
         print(f"已导航至: {driver.current_url}")
-# ^--^^--^^--^^--^^--^^--^^--^
+
 
 def extract_questions_from_page(driver):
     """从网页中提取指令、问题和选项。"""

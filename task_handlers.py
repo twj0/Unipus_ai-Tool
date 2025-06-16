@@ -1,4 +1,4 @@
-# File: task_handlers.py (The Final Assembly)
+# File: task_handlers.py (The Final Corrected Version)
 import time
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.common.by import By
@@ -7,81 +7,68 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 import tkinter as tk
 from tkinter import messagebox
-import ai_handler
-import browser_handler
-import config_manager
+import ai_handler, browser_handler, config_manager
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from gui import AutoAnswerGUI
 
 def call_ai(gui: 'AutoAnswerGUI', prompt: str):
-    """一个统一的AI调用辅助函数，包含完整的UI更新和错误处理。"""
+    """一个统一的AI调用辅助函数。"""
     model_name = gui.selected_model.get()
     api_key = config_manager.get_api_key(model_name.split(" ")[0].lower())
     if not api_key or "YOUR_" in api_key:
-        messagebox.showerror("API Key Error", f"错误：{model_name}的API Key未在config.ini中设置。")
-        return None
-        
-    # 在GUI中显示Prompt
+        messagebox.showerror("API Key Error", f"错误：{model_name}的API Key未设置。"); return None
     gui.ai_debug_text.delete(1.0, tk.END)
     gui.ai_debug_text.insert(tk.END, f"--- 发送给AI的Prompt ---\n{prompt}")
-    
-    # 调用AI并获取回复
     provider = ai_handler.get_ai_provider(model_name, api_key)
     response = provider.call_ai(prompt).strip()
-    
-    # 在GUI中显示回复
     gui.ai_debug_text.insert(tk.END, f"\n\n--- AI返回的原始回答 ---\n{response}")
     return response
 
 def handle_skip_page(driver: WebDriver, gui: 'AutoAnswerGUI'):
-    """通用跳过处理器，用于处理阅读、跟读、项目作业等。"""
-    gui.log("任务：此页面类型被设定为自动跳过。")
-    time.sleep(2) # 短暂等待，模拟操作
+    """通用跳过处理器。"""
+    gui.log("任务：此页面类型被设定为自动跳过。"); time.sleep(2)
 
 def handle_video_page(driver: WebDriver, gui: 'AutoAnswerGUI'):
-    """处理视频播放页面：尽力而为，如果找不到就快速跳过。"""
+    """处理视频播放页面：有足够的耐心等待iframe内部元素。"""
     gui.log("任务：视频播放处理器已启动。")
     iframe_found = False
     try:
-        # 使用较短的等待时间，快速判断是否存在iframe
-        wait = WebDriverWait(driver, 5)
+        # 等待iframe出现，然后切换
+        wait = WebDriverWait(driver, 10) # 等待10秒
         iframe_element = wait.until(EC.presence_of_element_located((By.TAG_NAME, "iframe")))
         driver.switch_to.frame(iframe_element)
         iframe_found = True
         gui.log("成功切换到iframe中。")
-
-        wait_inside_iframe = WebDriverWait(driver, 5)
+        
+        # --- 关键修正：进入iframe后，必须再次等待其内部的video标签加载 ---
+        wait_inside_iframe = WebDriverWait(driver, 20) # 给予充足的20秒等待时间
         video_element = wait_inside_iframe.until(EC.presence_of_element_located((By.TAG_NAME, "video")))
         gui.log("在iframe内成功定位到视频元素。")
-
-        # 注入脚本并播放
-        driver.execute_script("arguments[0].playbackRate = 16; arguments[0].muted = true; arguments[0].play();", video_element)
         
-        # 循环检查视频是否结束，设置一个合理的总超时
+        driver.execute_script("arguments[0].playbackRate = 16; arguments[0].muted = true; arguments[0].play();", video_element)
+        gui.log("已发送播放指令。")
+        
         start_time = time.time()
-        while time.time() - start_time < 180: # 最多等待3分钟
+        while time.time() - start_time < 300: # 最多等待5分钟，以应对长视频
             if gui.stop_flag.is_set(): break
             time.sleep(2)
             try:
-                progress = driver.execute_script("return { currentTime: arguments[0].currentTime, duration: arguments[0].duration, ended: arguments[0].ended };", video_element)
-                if progress and progress['ended']:
-                    gui.log("视频播放完毕。"); break
-                # 如果视频因未知原因卡住，当前时间等于总时间也算结束
-                if progress and progress['duration'] and abs(progress['currentTime'] - progress['duration']) < 1:
-                    gui.log("视频播放到达末尾。"); break
+                progress = driver.execute_script("return {currentTime: arguments[0].currentTime, duration: arguments[0].duration, ended: arguments[0].ended};", video_element)
+                if progress and progress.get('duration') and progress['duration'] > 0:
+                    if progress.get('ended') or abs(progress['currentTime'] - progress['duration']) < 1.5:
+                        gui.log("视频播放完毕。"); break
             except Exception:
-                gui.log("视频元素状态已更新或丢失，判定为播放结束。")
-                break
-        
+                gui.log("视频元素状态已更新或丢失，判定为播放结束。"); break
     except TimeoutException:
-        gui.log("警告：在指定时间内未找到视频相关元素，将跳过此视频任务。")
+        gui.log("警告：在指定时间内未找到视频iframe或video元素，将跳过。")
     except Exception as e:
         gui.log(f"处理视频时发生未知错误: {e}")
     finally:
         if iframe_found:
             driver.switch_to.default_content()
             gui.log("已从iframe切回主页面。")
+
 
 def handle_vocabulary_flashcards(driver: WebDriver, gui: 'AutoAnswerGUI'):
     """处理单词卡片学习页面：快速翻完所有卡片。"""
